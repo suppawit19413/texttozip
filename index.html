@@ -2,26 +2,29 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<title>HTML Generator</title>
+<title>HTML + CSS + JS ZIP Generator</title>
 <style>
-  body { font-family: Arial, sans-serif; margin: 40px; max-width: 700px; }
-  textarea { width: 100%; height: 200px; margin-bottom: 20px; }
+  body { font-family: Arial; margin: 40px; max-width: 700px; }
+  textarea { width: 100%; height: 250px; margin-bottom: 20px; font-family: monospace; }
   button { padding: 10px 20px; cursor: pointer; }
+  h2 { margin-bottom: 10px; }
 </style>
 </head>
 <body>
-<h2>เครื่องมือสร้าง HTML</h2>
-<p>วางข้อความที่ต้องการสร้างเป็น HTML แล้วกดสร้างไฟล์ ZIP:</p>
-<textarea id="inputText" placeholder="วางข้อความของคุณที่นี่..."></textarea><br>
-<button onclick="generateZip()">สร้างไฟล์ ZIP</button>
+<h2>สร้างไฟล์ ZIP สำหรับ Cloudflare Pages</h2>
+<p>วาง HTML/CSS/JS ของคุณลงในกล่องด้านล่าง (รวม &lt;style&gt; และ &lt;script&gt; ได้) จากนั้นกด “สร้าง ZIP”</p>
+
+<textarea id="userCode" placeholder="วางโค้ดของคุณที่นี่..."></textarea><br>
+<button onclick="createZip()">สร้าง ZIP</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
-function generateZip() {
+function createZip() {
     const JSZipInstance = new JSZip();
-    const content = document.getElementById("inputText").value;
+    const userCode = document.getElementById("userCode").value;
 
-    const htmlContent = `
+    // ใส่ทุกอย่างลง index.html
+    const indexHTML = `
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -29,14 +32,12 @@ function generateZip() {
 <title>หน้าเว็บของคุณ</title>
 </head>
 <body>
-<div>
-${content.replace(/\n/g, '<br>')}
-</div>
+${userCode}
 </body>
 </html>
     `.trim();
 
-    JSZipInstance.file("index.html", htmlContent);
+    JSZipInstance.file("index.html", indexHTML);
 
     JSZipInstance.generateAsync({type:"blob"}).then(function(content) {
         const link = document.createElement("a");
