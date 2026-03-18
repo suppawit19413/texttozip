@@ -1,51 +1,102 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<title>HTML + CSS + JS ZIP Generator</title>
-<style>
-  body { font-family: Arial; margin: 40px; max-width: 700px; }
-  textarea { width: 100%; height: 250px; margin-bottom: 20px; font-family: monospace; }
-  button { padding: 10px 20px; cursor: pointer; }
-  h2 { margin-bottom: 10px; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML Zip Generator for Cloudflare</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 90%; max-width: 600px; text-align: center; }
+        h2 { color: #2c3e50; margin-bottom: 1.5rem; }
+        textarea { width: 100%; height: 200px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; resize: none; font-family: monospace; box-sizing: border-box; margin-bottom: 1rem; }
+        button { background-color: #f38020; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 1rem; transition: background 0.3s; }
+        button:hover { background-color: #d9731c; }
+        #downloadArea { margin-top: 1.5rem; display: none; }
+        .success-msg { color: #27ae60; margin-bottom: 10px; font-weight: bold; }
+    </style>
 </head>
 <body>
-<h2>สร้างไฟล์ ZIP สำหรับ Cloudflare Pages</h2>
-<p>วาง HTML/CSS/JS ของคุณลงในกล่องด้านล่าง (รวม &lt;style&gt; และ &lt;script&gt; ได้) จากนั้นกด “สร้าง ZIP”</p>
 
-<textarea id="userCode" placeholder="วางโค้ดของคุณที่นี่..."></textarea><br>
-<button onclick="createZip()">สร้าง ZIP</button>
+<div class="container">
+    <h2><i class="fa-solid fa-file-zipper"></i> Web Zip Generator</h2>
+    <p style="font-size: 0.9rem; color: #666;">วางเนื้อหา HTML ที่ต้องการ แล้วระบบจะสร้างโครงสร้างไฟล์มาตรฐาน Cloudflare ให้ครับ</p>
+    
+    <textarea id="textContent" placeholder="วางข้อความหรือโค้ด HTML ที่นี่..."></textarea>
+    
+    <br>
+    <button onclick="generateZip()">ตกลง และสร้างไฟล์ .zip</button>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <div id="downloadArea">
+        <p class="success-msg">สร้างไฟล์สำเร็จแล้ว!</p>
+        <a id="downloadBtn" style="text-decoration: none;">
+            <button style="background-color: #2c3e50;"><i class="fa-solid fa-download"></i> ดาวน์โหลดเว็บของคุณ</button>
+        </a>
+    </div>
+</div>
+
 <script>
-function createZip() {
-    const JSZipInstance = new JSZip();
-    const userCode = document.getElementById("userCode").value;
+    async function generateZip() {
+        const content = document.getElementById('textContent').value;
+        if (!content) {
+            alert("กรุณาใส่ข้อความก่อนครับ");
+            return;
+        }
 
-    // ใส่ทุกอย่างลง index.html
-    const indexHTML = `
-<!DOCTYPE html>
+        const zip = new JSZip();
+
+        // 1. สร้าง index.html (เชื่อมโยงไปยัง style.css และ script.js)
+        const htmlTemplate = `<!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<title>หน้าเว็บของคุณ</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Cloudflare Website</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-${userCode}
+    <div id="app">
+        ${content}
+    </div>
+    <script src="script.js"><\/script>
 </body>
-</html>
-    `.trim();
+</html>`;
 
-    JSZipInstance.file("index.html", indexHTML);
-
-    JSZipInstance.generateAsync({type:"blob"}).then(function(content) {
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(content);
-        link.download = "website.zip";
-        link.click();
-    });
+        // 2. สร้าง style.css (ค่าเริ่มต้น)
+        const cssTemplate = `/* Cloudflare Static Styles */
+body {
+    margin: 0;
+    padding: 20px;
+    font-family: sans-serif;
+    line-height: 1.6;
+    color: #333;
 }
+#app {
+    max-width: 800px;
+    margin: 0 auto;
+}`;
+
+        // 3. สร้าง script.js (ค่าเริ่มต้น)
+        const jsTemplate = `// Cloudflare Static Scripts
+console.log("Website Loaded Successfully");`;
+
+        // เพิ่มไฟล์ลงใน Zip
+        zip.file("index.html", htmlTemplate);
+        zip.file("style.css", cssTemplate);
+        zip.file("script.js", jsTemplate);
+
+        // สร้างไฟล์ Zip และทำ Link ดาวน์โหลด
+        const blob = await zip.generateAsync({type: "blob"});
+        const url = URL.createObjectURL(blob);
+        
+        const downloadBtn = document.getElementById('downloadBtn');
+        downloadBtn.href = url;
+        downloadBtn.download = "web_project.zip";
+        
+        document.getElementById('downloadArea').style.display = 'block';
+    }
 </script>
+
 </body>
 </html>
